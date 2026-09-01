@@ -12,5 +12,8 @@
   "dependencies": {
     "@runwayml/sdk": "^1.0.0",
     "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "wrangler": "^4.50.0"
   }
 }
