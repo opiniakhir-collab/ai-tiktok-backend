@@ -7,71 +7,80 @@
   <title>Runway API Tester</title>
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #111;
-      color: white;
-      padding: 20px;
-      margin: 0;
+    * {
+      box-sizing: border-box;
     }
 
-    .box {
-      max-width: 600px;
-      margin: auto;
-      background: #1c1c1c;
+    body {
+      margin: 0;
       padding: 20px;
-      border-radius: 15px;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: #1d1d1d;
+      padding: 25px;
+      border-radius: 20px;
     }
 
     h1 {
       text-align: center;
+      margin-bottom: 30px;
     }
 
     label {
       display: block;
-      margin-top: 15px;
-      margin-bottom: 5px;
+      margin-top: 20px;
+      margin-bottom: 8px;
+      font-weight: bold;
     }
 
     input,
     textarea,
-    select,
-    button {
+    select {
       width: 100%;
-      box-sizing: border-box;
-      padding: 12px;
-      border-radius: 8px;
+      padding: 15px;
+      border-radius: 10px;
       border: 1px solid #555;
-      background: #222;
+      background: #252525;
       color: white;
       font-size: 16px;
     }
 
     textarea {
-      min-height: 100px;
+      min-height: 130px;
       resize: vertical;
     }
 
     button {
+      width: 100%;
       margin-top: 20px;
+      padding: 16px;
+      border: 0;
+      border-radius: 10px;
       background: #2563eb;
-      border: none;
+      color: white;
+      font-size: 18px;
       font-weight: bold;
       cursor: pointer;
     }
 
-    button:hover {
-      background: #1d4ed8;
+    button:active {
+      transform: scale(0.98);
     }
 
-    pre {
-      margin-top: 20px;
+    #result {
+      margin-top: 25px;
+      padding: 20px;
+      border-radius: 12px;
       background: #000;
-      padding: 15px;
-      border-radius: 10px;
       white-space: pre-wrap;
       word-break: break-word;
-      overflow-x: auto;
+      font-family: monospace;
     }
 
     .success {
@@ -79,14 +88,14 @@
     }
 
     .error {
-      color: #f87171;
+      color: #ff5555;
     }
   </style>
 </head>
 
 <body>
 
-<div class="box">
+<div class="container">
 
   <h1>🎬 Runway API Tester</h1>
 
@@ -97,6 +106,11 @@
     value="https://ai-tiktok-backend.opiniakhir.workers.dev"
   >
 
+  <button onclick="checkBackend()">
+    ❤️ Cek Backend
+  </button>
+
+
   <label>Image URL</label>
 
   <input
@@ -104,12 +118,14 @@
     placeholder="https://contoh.com/gambar.jpg"
   >
 
+
   <label>Prompt</label>
 
   <textarea
     id="prompt"
     placeholder="A person walking naturally toward the camera, cinematic movement"
   ></textarea>
+
 
   <label>Ratio</label>
 
@@ -121,6 +137,7 @@
     <option value="960:960">960:960</option>
   </select>
 
+
   <label>Duration</label>
 
   <select id="duration">
@@ -130,60 +147,112 @@
     <option value="10">10 detik</option>
   </select>
 
+
   <button onclick="generateVideo()">
     🚀 Generate Video
   </button>
 
-  <button onclick="checkHealth()">
-    ❤️ Cek Backend
-  </button>
 
-  <pre id="result">Hasil akan muncul di sini...</pre>
+  <div id="result">
+    Hasil akan muncul di sini...
+  </div>
 
 </div>
 
+
 <script>
 
-const result = document.getElementById("result");
+function getBackendUrl() {
 
-function showResult(data) {
-  result.textContent = JSON.stringify(data, null, 2);
+  let url = document
+    .getElementById("backendUrl")
+    .value
+    .trim();
+
+  return url.replace(/\/+$/, "");
 }
 
-async function checkHealth() {
 
-  result.textContent = "⏳ Menghubungkan ke backend...";
+function showResult(message, success = false) {
 
-  const backendUrl =
-    document.getElementById("backendUrl").value.trim();
+  const result = document.getElementById("result");
+
+  result.className = success
+    ? "success"
+    : "error";
+
+  result.textContent = message;
+}
+
+
+/* ============================
+   CEK BACKEND
+============================ */
+
+async function checkBackend() {
+
+  showResult("⏳ Menghubungkan ke backend...");
+
+  const backend = getBackendUrl();
 
   try {
 
     const response = await fetch(
-      backendUrl + "/"
+      backend + "/",
+      {
+        method: "GET",
+        mode: "cors",
+        cache: "no-store"
+      }
     );
 
-    const data = await response.json();
+    const text = await response.text();
 
-    showResult(data);
+    if (!response.ok) {
+
+      throw new Error(
+        "HTTP " +
+        response.status +
+        "\n" +
+        text
+      );
+
+    }
+
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
+    }
+
+    showResult(
+      "✅ BACKEND TERHUBUNG\n\n" +
+      JSON.stringify(data, null, 2),
+      true
+    );
 
   } catch (error) {
 
-    result.textContent =
-      "❌ Gagal terhubung ke backend\n\n" +
-      error.message;
+    showResult(
+      "❌ GAGAL TERHUBUNG\n\n" +
+      error.message +
+      "\n\nBackend yang digunakan:\n" +
+      backend
+    );
 
   }
 }
 
 
+/* ============================
+   GENERATE VIDEO
+============================ */
+
 async function generateVideo() {
 
-  result.textContent =
-    "⏳ Mengirim permintaan ke Runway...";
-
-  const backendUrl =
-    document.getElementById("backendUrl").value.trim();
+  const backend = getBackendUrl();
 
   const imageUrl =
     document.getElementById("imageUrl").value.trim();
@@ -195,13 +264,16 @@ async function generateVideo() {
     document.getElementById("ratio").value;
 
   const duration =
-    Number(document.getElementById("duration").value);
+    Number(
+      document.getElementById("duration").value
+    );
 
 
   if (!imageUrl) {
 
-    result.textContent =
-      "❌ Image URL wajib diisi.";
+    showResult(
+      "❌ Image URL wajib diisi."
+    );
 
     return;
   }
@@ -209,55 +281,103 @@ async function generateVideo() {
 
   if (!prompt) {
 
-    result.textContent =
-      "❌ Prompt wajib diisi.";
+    showResult(
+      "❌ Prompt wajib diisi."
+    );
 
     return;
   }
 
 
+  showResult(
+    "⏳ Mengirim request ke Runway..."
+  );
+
+
   try {
 
     const response = await fetch(
-      backendUrl + "/generate-video",
+      backend + "/generate-video",
       {
         method: "POST",
+
+        mode: "cors",
 
         headers: {
           "Content-Type": "application/json"
         },
 
         body: JSON.stringify({
+
           imageUrl: imageUrl,
+
           prompt: prompt,
+
           ratio: ratio,
+
           duration: duration
+
         })
       }
     );
 
 
-    const data = await response.json();
+    const text =
+      await response.text();
 
-    showResult(data);
 
+    let data;
 
-    if (data.success && data.taskId) {
+    try {
 
-      result.textContent +=
-        "\n\n⏳ Task berhasil dibuat.\n" +
-        "Task ID: " +
-        data.taskId +
-        "\n\n" +
-        "Gunakan Task ID tersebut untuk cek status video.";
+      data =
+        JSON.parse(text);
+
+    } catch {
+
+      data =
+        {
+          raw: text
+        };
 
     }
 
+
+    if (!response.ok) {
+
+      throw new Error(
+        "HTTP " +
+        response.status +
+        "\n\n" +
+        JSON.stringify(
+          data,
+          null,
+          2
+        )
+      );
+
+    }
+
+
+    showResult(
+      "✅ REQUEST BERHASIL\n\n" +
+      JSON.stringify(
+        data,
+        null,
+        2
+      ),
+      true
+    );
+
+
   } catch (error) {
 
-    result.textContent =
-      "❌ Gagal terhubung ke backend\n\n" +
-      error.message;
+    showResult(
+      "❌ GAGAL GENERATE VIDEO\n\n" +
+      error.message +
+      "\n\nBackend:\n" +
+      backend
+    );
 
   }
 
