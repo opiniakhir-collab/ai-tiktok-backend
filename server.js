@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import RunwayML from "@runwayml/sdk";
 import { env } from "cloudflare:workers";
 import { httpServerHandler } from "cloudflare:node";
@@ -11,6 +12,7 @@ const app = express();
  * ============================
  */
 
+app.use(cors());
 
 app.use(
   express.json({
@@ -22,15 +24,6 @@ app.use(
  * ============================
  * RUNWAY CLIENT
  * ============================
- *
- * API key disimpan di Cloudflare Secret.
- *
- * Nama secret yang disarankan:
- * RUNWAY_API_KEY
- *
- * Kita juga menerima:
- * RUNWAYML_API_SECRET
- * sebagai fallback.
  */
 
 function getRunwayClient() {
@@ -76,9 +69,10 @@ app.get("/", (req, res) => {
  *
  * {
  *   "imageUrl": "https://....",
- *   "prompt": "A person walking..."
+ *   "prompt": "A person walking...",
+ *   "ratio": "720:1280",
+ *   "duration": 5
  * }
- *
  */
 
 app.post("/generate-video", async (req, res) => {
@@ -90,7 +84,6 @@ app.post("/generate-video", async (req, res) => {
       duration,
     } = req.body || {};
 
-    // Validasi image URL
     if (!imageUrl) {
       return res.status(400).json({
         success: false,
@@ -98,7 +91,6 @@ app.post("/generate-video", async (req, res) => {
       });
     }
 
-    // Validasi prompt
     if (!prompt) {
       return res.status(400).json({
         success: false,
@@ -106,26 +98,38 @@ app.post("/generate-video", async (req, res) => {
       });
     }
 
-    /*
-     * Gen-4.5 mendukung beberapa ratio.
-     *
-     * Default kita gunakan portrait 720:1280
-     * karena cocok untuk TikTok / Reels / Shorts.
-     */
+    const allowedRatios = [
+      "1280:720",
+      "1584:672",
+      "1104:832",
+      "720:1280",
+      "832:1104",
+      "672:1584",
+      "960:960",
+    ];
 
     const selectedRatio = ratio || "720:1280";
 
-    /*
-     * Gen-4.5 mendukung duration 2-10 detik.
-     * Default 10 detik.
-     */
-
-    const selectedDuration = Number(duration) || 10;
-
-    if (selectedDuration < 2 || selectedDuration > 10) {
+    if (!allowedRatios.includes(selectedRatio)) {
       return res.status(400).json({
         success: false,
-        error: "duration harus antara 2 dan 10 detik.",
+        error:
+          "ratio tidak valid. Gunakan salah satu: " +
+          allowedRatios.join(", "),
+      });
+    }
+
+    const selectedDuration = Number(duration) || 5;
+
+    if (
+      !Number.isInteger(selectedDuration) ||
+      selectedDuration < 2 ||
+      selectedDuration > 10
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          "duration harus bilangan bulat antara 2 dan 10 detik.",
       });
     }
 
@@ -168,7 +172,6 @@ app.post("/generate-video", async (req, res) => {
  * ============================
  *
  * GET /video-status/:taskId
- *
  */
 
 app.get("/video-status/:taskId", async (req, res) => {
@@ -185,11 +188,6 @@ app.get("/video-status/:taskId", async (req, res) => {
     const runway = getRunwayClient();
 
     const task = await runway.tasks.retrieve(taskId);
-
-    /*
-     * Ambil URL video kalau generation
-     * sudah selesai.
-     */
 
     let outputUrl = null;
 
@@ -241,10 +239,6 @@ app.use((req, res) => {
  * ============================
  * CLOUDFLARE WORKERS
  * ============================
- *
- * Express berjalan pada port 3000
- * dan httpServerHandler menghubungkannya
- * ke Cloudflare Workers.
  */
 
 app.listen(3000);
