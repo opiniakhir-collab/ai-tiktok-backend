@@ -1,5 +1,4 @@
 import express from "express";
-import cors from "cors";
 import RunwayML from "@runwayml/sdk";
 import { env } from "cloudflare:workers";
 import { httpServerHandler } from "cloudflare:node";
@@ -12,7 +11,6 @@ const app = express();
  * ============================
  */
 
-app.use(cors());
 
 app.use(
   express.json({
