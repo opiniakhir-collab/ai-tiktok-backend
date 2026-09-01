@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Runway API Tester</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      padding: 20px;
+      margin: 0;
+    }
+
+    .box {
+      max-width: 600px;
+      margin: auto;
+      background: #1c1c1c;
+      padding: 20px;
+      border-radius: 15px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 5px;
+    }
+
+    input,
+    textarea,
+    select,
+    button {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #555;
+      background: #222;
+      color: white;
+      font-size: 16px;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    button {
+      margin-top: 20px;
+      background: #2563eb;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    pre {
+      margin-top: 20px;
+      background: #000;
+      padding: 15px;
+      border-radius: 10px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-x: auto;
+    }
+
+    .success {
+      color: #4ade80;
+    }
+
+    .error {
+      color: #f87171;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="box">
+
+  <h1>🎬 Runway API Tester</h1>
+
+  <label>Backend URL</label>
+
+  <input
+    id="backendUrl"
+    value="https://ai-tiktok-backend.opiniakhir.workers.dev"
+  >
+
+  <label>Image URL</label>
+
+  <input
+    id="imageUrl"
+    placeholder="https://contoh.com/gambar.jpg"
+  >
+
+  <label>Prompt</label>
+
+  <textarea
+    id="prompt"
+    placeholder="A person walking naturally toward the camera, cinematic movement"
+  ></textarea>
+
+  <label>Ratio</label>
+
+  <select id="ratio">
+    <option value="720:1280">720:1280 (TikTok)</option>
+    <option value="1280:720">1280:720</option>
+    <option value="832:1104">832:1104</option>
+    <option value="1104:832">1104:832</option>
+    <option value="960:960">960:960</option>
+  </select>
+
+  <label>Duration</label>
+
+  <select id="duration">
+    <option value="5">5 detik</option>
+    <option value="6">6 detik</option>
+    <option value="8">8 detik</option>
+    <option value="10">10 detik</option>
+  </select>
+
+  <button onclick="generateVideo()">
+    🚀 Generate Video
+  </button>
+
+  <button onclick="checkHealth()">
+    ❤️ Cek Backend
+  </button>
+
+  <pre id="result">Hasil akan muncul di sini...</pre>
+
+</div>
+
+<script>
+
+const result = document.getElementById("result");
+
+function showResult(data) {
+  result.textContent = JSON.stringify(data, null, 2);
+}
+
+async function checkHealth() {
+
+  result.textContent = "⏳ Menghubungkan ke backend...";
+
+  const backendUrl =
+    document.getElementById("backendUrl").value.trim();
+
+  try {
+
+    const response = await fetch(
+      backendUrl + "/"
+    );
+
+    const data = await response.json();
+
+    showResult(data);
+
+  } catch (error) {
+
+    result.textContent =
+      "❌ Gagal terhubung ke backend\n\n" +
+      error.message;
+
+  }
+}
+
+
+async function generateVideo() {
+
+  result.textContent =
+    "⏳ Mengirim permintaan ke Runway...";
+
+  const backendUrl =
+    document.getElementById("backendUrl").value.trim();
+
+  const imageUrl =
+    document.getElementById("imageUrl").value.trim();
+
+  const prompt =
+    document.getElementById("prompt").value.trim();
+
+  const ratio =
+    document.getElementById("ratio").value;
+
+  const duration =
+    Number(document.getElementById("duration").value);
+
+
+  if (!imageUrl) {
+
+    result.textContent =
+      "❌ Image URL wajib diisi.";
+
+    return;
+  }
+
+
+  if (!prompt) {
+
+    result.textContent =
+      "❌ Prompt wajib diisi.";
+
+    return;
+  }
+
+
+  try {
+
+    const response = await fetch(
+      backendUrl + "/generate-video",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          imageUrl: imageUrl,
+          prompt: prompt,
+          ratio: ratio,
+          duration: duration
+        })
+      }
+    );
+
+
+    const data = await response.json();
+
+    showResult(data);
+
+
+    if (data.success && data.taskId) {
+
+      result.textContent +=
+        "\n\n⏳ Task berhasil dibuat.\n" +
+        "Task ID: " +
+        data.taskId +
+        "\n\n" +
+        "Gunakan Task ID tersebut untuk cek status video.";
+
+    }
+
+  } catch (error) {
+
+    result.textContent =
+      "❌ Gagal terhubung ke backend\n\n" +
+      error.message;
+
+  }
+
+}
+
+</script>
+
+</body>
+</html>
