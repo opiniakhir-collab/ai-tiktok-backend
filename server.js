@@ -12,7 +12,13 @@ const app = express();
  * ============================
  */
 
-app.use(cors());
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "HEAD", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"],
+}));
+
+app.options("*", cors());
 
 app.use(
   express.json({
