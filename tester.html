@@ -13,29 +13,30 @@
 
     body {
       margin: 0;
-      padding: 20px;
       background: #111;
       color: white;
       font-family: Arial, sans-serif;
     }
 
     .container {
-      max-width: 700px;
-      margin: auto;
-      background: #1d1d1d;
+      max-width: 760px;
+      margin: 30px auto;
       padding: 25px;
-      border-radius: 20px;
+      background: #1d1d1d;
+      border-radius: 24px;
     }
 
     h1 {
       text-align: center;
-      margin-bottom: 30px;
+      font-size: 34px;
+      margin-bottom: 35px;
     }
 
     label {
       display: block;
-      margin-top: 20px;
-      margin-bottom: 8px;
+      margin-top: 22px;
+      margin-bottom: 9px;
+      font-size: 18px;
       font-weight: bold;
     }
 
@@ -43,10 +44,10 @@
     textarea,
     select {
       width: 100%;
-      padding: 15px;
-      border-radius: 10px;
-      border: 1px solid #555;
-      background: #252525;
+      padding: 16px;
+      border-radius: 12px;
+      border: 2px solid #555;
+      background: #222;
       color: white;
       font-size: 16px;
     }
@@ -58,13 +59,13 @@
 
     button {
       width: 100%;
-      margin-top: 20px;
-      padding: 16px;
+      margin-top: 22px;
+      padding: 18px;
       border: 0;
-      border-radius: 10px;
-      background: #2563eb;
+      border-radius: 14px;
+      background: #2864e8;
       color: white;
-      font-size: 18px;
+      font-size: 19px;
       font-weight: bold;
       cursor: pointer;
     }
@@ -73,22 +74,38 @@
       transform: scale(0.98);
     }
 
-    #result {
+    .result {
       margin-top: 25px;
       padding: 20px;
-      border-radius: 12px;
       background: #000;
+      border-radius: 15px;
       white-space: pre-wrap;
       word-break: break-word;
       font-family: monospace;
+      line-height: 1.5;
     }
 
     .success {
-      color: #4ade80;
+      color: #7cff7c;
     }
 
     .error {
-      color: #ff5555;
+      color: #ff6666;
+    }
+
+    .info {
+      color: #80bfff;
+    }
+
+    video {
+      width: 100%;
+      margin-top: 20px;
+      border-radius: 12px;
+    }
+
+    a {
+      color: #6ea8ff;
+      word-break: break-all;
     }
   </style>
 </head>
@@ -103,21 +120,18 @@
 
   <input
     id="backendUrl"
+    type="url"
     value="https://ai-tiktok-backend.opiniakhir.workers.dev"
+    placeholder="https://nama-worker.workers.dev"
   >
-
-  <button onclick="checkBackend()">
-    ❤️ Cek Backend
-  </button>
-
 
   <label>Image URL</label>
 
   <input
     id="imageUrl"
+    type="url"
     placeholder="https://contoh.com/gambar.jpg"
   >
-
 
   <label>Prompt</label>
 
@@ -126,133 +140,170 @@
     placeholder="A person walking naturally toward the camera, cinematic movement"
   ></textarea>
 
-
   <label>Ratio</label>
 
   <select id="ratio">
     <option value="720:1280">720:1280 (TikTok)</option>
-    <option value="1280:720">1280:720</option>
+    <option value="1280:720">1280:720 (Landscape)</option>
     <option value="832:1104">832:1104</option>
     <option value="1104:832">1104:832</option>
+    <option value="1584:672">1584:672</option>
+    <option value="672:1584">672:1584</option>
     <option value="960:960">960:960</option>
   </select>
-
 
   <label>Duration</label>
 
   <select id="duration">
     <option value="5">5 detik</option>
+    <option value="2">2 detik</option>
+    <option value="3">3 detik</option>
+    <option value="4">4 detik</option>
     <option value="6">6 detik</option>
+    <option value="7">7 detik</option>
     <option value="8">8 detik</option>
+    <option value="9">9 detik</option>
     <option value="10">10 detik</option>
   </select>
-
 
   <button onclick="generateVideo()">
     🚀 Generate Video
   </button>
 
+  <button onclick="checkBackend()">
+    ❤️ Cek Backend
+  </button>
 
-  <div id="result">
+  <div id="result" class="result">
     Hasil akan muncul di sini...
   </div>
 
 </div>
 
-
 <script>
+
+const DEFAULT_BACKEND =
+  "https://ai-tiktok-backend.opiniakhir.workers.dev";
+
+
+/*
+========================================
+AMBIL BACKEND URL
+========================================
+*/
 
 function getBackendUrl() {
 
-  let url = document
-    .getElementById("backendUrl")
-    .value
-    .trim();
+  let url =
+    document.getElementById("backendUrl").value.trim();
+
+  if (!url) {
+    url = DEFAULT_BACKEND;
+  }
 
   return url.replace(/\/+$/, "");
 }
 
 
-function showResult(message, success = false) {
+/*
+========================================
+TAMPILKAN HASIL
+========================================
+*/
 
-  const result = document.getElementById("result");
+function showResult(message, type = "") {
 
-  result.className = success
-    ? "success"
-    : "error";
+  const result =
+    document.getElementById("result");
+
+  result.className = "result " + type;
 
   result.textContent = message;
 }
 
 
-/* ============================
-   CEK BACKEND
-============================ */
+/*
+========================================
+CEK BACKEND
+========================================
+*/
 
 async function checkBackend() {
 
-  showResult("⏳ Menghubungkan ke backend...");
+  const backend =
+    getBackendUrl();
 
-  const backend = getBackendUrl();
+  showResult(
+    "⏳ Menghubungkan ke backend...\n\n" +
+    backend,
+    "info"
+  );
 
   try {
 
-    const response = await fetch(
-      backend + "/",
-      {
+    const response =
+      await fetch(backend + "/", {
         method: "GET",
-        mode: "cors",
-        cache: "no-store"
-      }
-    );
+        headers: {
+          "Accept": "application/json"
+        }
+      });
 
-    const text = await response.text();
+    const contentType =
+      response.headers.get("content-type") || "";
 
-    if (!response.ok) {
+    const text =
+      await response.text();
 
-      throw new Error(
-        "HTTP " +
-        response.status +
-        "\n" +
-        text
+    console.log("Backend response:", text);
+
+    if (!contentType.includes("application/json")) {
+
+      showResult(
+        "❌ Backend tidak mengembalikan JSON.\n\n" +
+        "HTTP: " + response.status + "\n\n" +
+        "Response:\n" +
+        text.substring(0, 500),
+        "error"
       );
 
+      return;
     }
 
-    let data;
-
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = text;
-    }
+    const data =
+      JSON.parse(text);
 
     showResult(
       "✅ BACKEND TERHUBUNG\n\n" +
       JSON.stringify(data, null, 2),
-      true
+      "success"
     );
 
   } catch (error) {
 
-    showResult(
-      "❌ GAGAL TERHUBUNG\n\n" +
-      error.message +
-      "\n\nBackend yang digunakan:\n" +
-      backend
-    );
+    console.error(error);
 
+    showResult(
+      "❌ Gagal terhubung ke backend.\n\n" +
+      error.message +
+      "\n\nBackend:\n" +
+      backend,
+      "error"
+    );
   }
 }
 
 
-/* ============================
-   GENERATE VIDEO
-============================ */
+/*
+========================================
+GENERATE VIDEO
+========================================
+*/
 
 async function generateVideo() {
 
-  const backend = getBackendUrl();
+  const backend =
+    getBackendUrl();
 
   const imageUrl =
     document.getElementById("imageUrl").value.trim();
@@ -269,20 +320,25 @@ async function generateVideo() {
     );
 
 
+  /*
+  VALIDASI
+  */
+
   if (!imageUrl) {
 
     showResult(
-      "❌ Image URL wajib diisi."
+      "❌ Image URL wajib diisi.",
+      "error"
     );
 
     return;
   }
 
-
   if (!prompt) {
 
     showResult(
-      "❌ Prompt wajib diisi."
+      "❌ Prompt wajib diisi.",
+      "error"
     );
 
     return;
@@ -290,97 +346,295 @@ async function generateVideo() {
 
 
   showResult(
-    "⏳ Mengirim request ke Runway..."
+    "⏳ Mengirim request ke Runway...\n\n" +
+    "Backend: " + backend,
+    "info"
   );
 
 
   try {
 
-    const response = await fetch(
-      backend + "/generate-video",
-      {
-        method: "POST",
+    const response =
+      await fetch(
+        backend + "/generate-video",
+        {
+          method: "POST",
 
-        mode: "cors",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
 
-        headers: {
-          "Content-Type": "application/json"
-        },
+          body: JSON.stringify({
+            imageUrl: imageUrl,
+            prompt: prompt,
+            ratio: ratio,
+            duration: duration
+          })
+        }
+      );
 
-        body: JSON.stringify({
 
-          imageUrl: imageUrl,
-
-          prompt: prompt,
-
-          ratio: ratio,
-
-          duration: duration
-
-        })
-      }
-    );
-
+    const contentType =
+      response.headers.get("content-type") || "";
 
     const text =
       await response.text();
 
 
-    let data;
+    /*
+    JIKA SERVER MENGEMBALIKAN HTML
+    */
 
-    try {
+    if (!contentType.includes("application/json")) {
 
-      data =
-        JSON.parse(text);
-
-    } catch {
-
-      data =
-        {
-          raw: text
-        };
-
-    }
-
-
-    if (!response.ok) {
-
-      throw new Error(
-        "HTTP " +
-        response.status +
-        "\n\n" +
-        JSON.stringify(
-          data,
-          null,
-          2
-        )
+      showResult(
+        "❌ Server mengembalikan HTML, bukan JSON.\n\n" +
+        "HTTP: " + response.status +
+        "\n\nResponse:\n" +
+        text.substring(0, 500),
+        "error"
       );
 
+      return;
     }
 
 
+    const data =
+      JSON.parse(text);
+
+
+    if (!response.ok || !data.success) {
+
+      showResult(
+        "❌ Generate gagal.\n\n" +
+        JSON.stringify(data, null, 2),
+        "error"
+      );
+
+      return;
+    }
+
+
+    /*
+    TASK BERHASIL DIBUAT
+    */
+
     showResult(
-      "✅ REQUEST BERHASIL\n\n" +
-      JSON.stringify(
-        data,
-        null,
-        2
-      ),
-      true
+      "✅ VIDEO GENERATION DIMULAI\n\n" +
+      "Task ID:\n" +
+      data.taskId +
+      "\n\nStatus:\n" +
+      data.status +
+      "\n\nMenunggu video selesai...",
+      "success"
     );
 
+
+    /*
+    MULAI CEK STATUS
+    */
+
+    pollVideoStatus(data.taskId);
 
   } catch (error) {
 
+    console.error(error);
+
     showResult(
-      "❌ GAGAL GENERATE VIDEO\n\n" +
-      error.message +
-      "\n\nBackend:\n" +
-      backend
+      "❌ Gagal terhubung ke backend.\n\n" +
+      error.message,
+      "error"
     );
-
   }
+}
 
+
+/*
+========================================
+CEK STATUS VIDEO
+========================================
+*/
+
+async function pollVideoStatus(taskId) {
+
+  const backend =
+    getBackendUrl();
+
+  let attempts = 0;
+
+  const maxAttempts = 60;
+
+
+  const timer =
+    setInterval(async () => {
+
+      attempts++;
+
+
+      try {
+
+        const response =
+          await fetch(
+            backend +
+            "/video-status/" +
+            encodeURIComponent(taskId),
+            {
+              method: "GET",
+              headers: {
+                "Accept": "application/json"
+              }
+            }
+          );
+
+
+        const contentType =
+          response.headers.get("content-type") || "";
+
+        const text =
+          await response.text();
+
+
+        if (!contentType.includes("application/json")) {
+
+          clearInterval(timer);
+
+          showResult(
+            "❌ Status server bukan JSON.\n\n" +
+            text.substring(0, 500),
+            "error"
+          );
+
+          return;
+        }
+
+
+        const data =
+          JSON.parse(text);
+
+
+        console.log(
+          "Video status:",
+          data
+        );
+
+
+        /*
+        VIDEO SELESAI
+        */
+
+        if (
+          data.status === "SUCCEEDED" &&
+          data.outputUrl
+        ) {
+
+          clearInterval(timer);
+
+          showResult(
+            "🎉 VIDEO BERHASIL DIBUAT!\n\n" +
+            "Task ID:\n" +
+            taskId +
+            "\n\n" +
+            "Video URL:\n" +
+            data.outputUrl,
+            "success"
+          );
+
+
+          const video =
+            document.createElement("video");
+
+          video.controls = true;
+          video.playsInline = true;
+          video.src = data.outputUrl;
+
+
+          document
+            .getElementById("result")
+            .appendChild(video);
+
+
+          return;
+        }
+
+
+        /*
+        VIDEO GAGAL
+        */
+
+        if (
+          data.status === "FAILED" ||
+          data.status === "CANCELED"
+        ) {
+
+          clearInterval(timer);
+
+          showResult(
+            "❌ Video gagal dibuat.\n\n" +
+            JSON.stringify(data, null, 2),
+            "error"
+          );
+
+          return;
+        }
+
+
+        /*
+        MASIH PROSES
+        */
+
+        showResult(
+          "⏳ Video masih diproses...\n\n" +
+          "Task ID:\n" +
+          taskId +
+          "\n\n" +
+          "Status:\n" +
+          data.status +
+          "\n\n" +
+          "Percobaan: " +
+          attempts +
+          "/" +
+          maxAttempts,
+          "info"
+        );
+
+
+        /*
+        BATAS POLLING
+        */
+
+        if (attempts >= maxAttempts) {
+
+          clearInterval(timer);
+
+          showResult(
+            "⚠️ Waktu menunggu habis.\n\n" +
+            "Task ID:\n" +
+            taskId +
+            "\n\n" +
+            "Cek status secara manual.",
+            "error"
+          );
+        }
+
+
+      } catch (error) {
+
+        console.error(
+          "Status error:",
+          error
+        );
+
+        clearInterval(timer);
+
+        showResult(
+          "❌ Gagal mengecek status video.\n\n" +
+          error.message,
+          "error"
+        );
+      }
+
+    }, 5000);
 }
 
 </script>
